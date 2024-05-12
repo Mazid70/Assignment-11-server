@@ -26,6 +26,17 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    app.get("/allfoods", async (req, res) => {
+      const search = req.query.search;
+      let query = {};
+      if (search) {
+          query = {
+              foodName: { $regex: search, $options: "i" } // Case-insensitive search
+          };
+      }
+      const result = await homeFoods.find(query).toArray();
+      res.send(result);
+  }); 
     app.get("/home/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
