@@ -17,10 +17,12 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-
+app.use(express.json());
 async function run() {
   try {
     const homeFoods = client.db("Home_Foods_DB").collection("homeFoods");
+    const galleryCollection = client.db("Gallery_Foods_DB").collection("galleryFoods");
+    const purchaseData = client.db("Buy_Foods_DB").collection("buyFoods");
     app.get("/home", async (req, res) => {
       const cursor = homeFoods.find();
       const result = await cursor.toArray();
@@ -43,7 +45,31 @@ async function run() {
       const result = await homeFoods.findOne(query);
       res.send(result);
     });
-    await client.db("admin").command({ ping: 1 });
+
+
+    app.post("/gallery", async (req, res) => {
+      const newItems = req.body;
+      const result = await galleryCollection.insertOne(newItems);
+      console.log(newItems);
+      res.send(result);
+    });
+
+    app.get("/gallery", async (req, res) => {
+      const cursor = galleryCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+
+    app.post("/buy", async (req, res) => {
+      const newItems = req.body;
+      const result = await purchaseData.insertOne(newItems);
+      console.log(newItems);
+      res.send(result);
+    });
+    
+
+await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
@@ -52,7 +78,7 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.use(express.json());
+
 app.get("/", (req, res) => {
   res.send("assignment-11 server is running");
 });
