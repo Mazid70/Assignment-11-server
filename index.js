@@ -23,6 +23,7 @@ async function run() {
     const homeFoods = client.db("Home_Foods_DB").collection("homeFoods");
     const galleryCollection = client.db("Gallery_Foods_DB").collection("galleryFoods");
     const purchaseData = client.db("Buy_Foods_DB").collection("buyFoods");
+    const userFoodData = client.db("User_Foods_DB").collection("userFoods");
     app.get("/home", async (req, res) => {
       const cursor = homeFoods.find();
       const result = await cursor.toArray();
@@ -78,7 +79,31 @@ async function run() {
       const result = await purchaseData.find(query).toArray();
       res.send(result);
     });
+    app.delete("/buy/:email/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await purchaseData.deleteOne(query);
+      res.send(result);
+    });
 
+    app.post("/userfood", async (req, res) => {
+      const newItems = req.body;
+      const result = await userFoodData.insertOne(newItems);
+      console.log(newItems);
+      res.send(result);
+    });
+
+    app.get("/userfood", async (req, res) => {
+      const cursor = userFoodData.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    }); 
+    app.get("/userfood/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await userFoodData.find(query).toArray();
+      res.send(result);
+    });
 await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
