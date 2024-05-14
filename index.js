@@ -67,7 +67,17 @@ async function run() {
       console.log(newItems);
       res.send(result);
     });
-    
+    app.get("/buy", async (req, res) => {
+      const cursor = purchaseData.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/buy/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { buyerEmail: email };
+      const result = await purchaseData.find(query).toArray();
+      res.send(result);
+    });
 
 await client.db("admin").command({ ping: 1 });
     console.log(
