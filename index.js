@@ -8,7 +8,11 @@ const app = express();
 const port = process.env.PORT || 1000;
 app.use(
   cors({
-    origin: ["http://localhost:5174", "http://localhost:5173"],
+    origin: [
+      "http://localhost:5174",
+      "http://localhost:5173",
+      "https://tablemingle.netlify.app",
+    ],
     credentials: true,
   })
 );
@@ -67,7 +71,19 @@ async function run() {
       const result = await homeFoods.findOne(query);
       res.send(result);
     });
-
+    app.patch("/home/:id", async (req, res) => {
+      const id = req.params.id;
+      const options = { upsert: true };
+      const query = { _id: new ObjectId(id) };
+      const updateFood = req.body;
+      const food = {
+        $set: {
+          quantity: updateFood.quantity,
+        },
+      };
+      const result = await homeFoods.updateOne(query, food, options);
+      res.send(result);
+    });
     app.post("/gallery", async (req, res) => {
       const newItems = req.body;
       const result = await galleryCollection.insertOne(newItems);
@@ -82,11 +98,49 @@ async function run() {
     });
 
     app.post("/buy", async (req, res) => {
-      const newItems = req.body;
-      const result = await purchaseData.insertOne(newItems);
-      console.log(newItems);
-      res.send(result);
+      const {
+        foodName,
+        price,
+        foodQuantity,
+        buyerName,
+        buyerEmail,
+        buyingDate,
+        foodImage,
+        madeBy,
+      } = req.body;
+      let existingPurchase = await purchaseData.findOne({
+        foodName,
+        buyerEmail,
+      });
+
+      if (existingPurchase) {
+        await purchaseData.updateOne(
+          { _id: existingPurchase._id },
+          { $inc: { foodQuantity: foodQuantity } }
+        );
+
+        existingPurchase = await purchaseData.findOne({
+          _id: existingPurchase._id,
+        });
+        res.send(existingPurchase);
+      } else {
+        const newPurchase = {
+          foodName,
+          price,
+          foodQuantity,
+          buyerName,
+          buyerEmail,
+          buyingDate,
+          foodImage,
+          madeBy,
+        };
+        await purchaseData.insertOne(newPurchase);
+        // Fetch and send the inserted document as response
+        const insertedDocument = await purchaseData.findOne(newPurchase);
+        res.send(insertedDocument);
+      }
     });
+
     app.get("/buy", async (req, res) => {
       const cursor = purchaseData.find();
       const result = await cursor.toArray();
@@ -119,6 +173,28 @@ async function run() {
     app.get("/userfood", async (req, res) => {
       const cursor = userFoodData.find();
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.put("/userfood/:email/:id", async (req, res) => {
+      const id = req.params.id;
+      const options = { upsert: true };
+      const query = { _id: new ObjectId(id) };
+      const updateFood = req.body;
+      const food = {
+        $set: {
+          foodImage: updateFood.foodImage,
+          foodName: updateFood.foodName,
+          foodCategory: updateFood.foodCategory,
+          quantity: updateFood.quantity,
+          price: updateFood.price,
+          foodOrigin: updateFood.foodOrigin,
+          foodDescription: updateFood.foodDescription,
+          userName: updateFood.userName,
+          userEmail: updateFood.userEmail,
+        },
+      };
+      const result = await userFoodData.updateOne(query, food, options);
       res.send(result);
     });
     app.get("/userfood/:email", verifyToken, async (req, res) => {
